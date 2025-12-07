@@ -139,9 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = URL.createObjectURL(file);
                 videoElement.src = url;
                 videoElement.onloadedmetadata = () => {
-                    dropZone.classList.add('loaded');
-                    dropZone.querySelector('p').textContent = "LOADED: " + file.name;
-                    checkReady();
+                    try {
+                        dropZone.classList.add('loaded');
+                        dropZone.querySelector('p').textContent = "LOADED: " + file.name;
+                        checkReady();
+                    } catch (e) {
+                        console.error("Metadata Load Error:", e);
+                    }
                 };
             }
         }
@@ -169,10 +173,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file && file.type.startsWith('image/')) {
                 const img = new Image();
                 img.onload = () => {
-                    injectedImage = img;
-                    dropZoneAssets.classList.add('has-image');
-                    dropZoneAssets.querySelector('p').textContent = "READY: " + file.name;
-                    dropZoneAssets.style.background = 'rgba(255, 0, 85, 0.2)';
+                    try {
+                        injectedImage = img;
+                        dropZoneAssets.classList.add('has-image');
+                        dropZoneAssets.querySelector('p').textContent = "READY: " + file.name;
+                        dropZoneAssets.style.background = 'rgba(255, 0, 85, 0.2)';
+                    } catch (e) {
+                        console.error("Image Load Error:", e);
+                    }
                 };
                 img.src = URL.createObjectURL(file);
             }
@@ -287,16 +295,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         function updateCipherMessage() {
-            let rawText = cipherText.value.toUpperCase();
-            if (!rawText && isCipherActive) rawText = " ";
+            try {
+                let rawText = cipherText.value.toUpperCase();
+                if (!rawText && isCipherActive) rawText = " ";
 
-            const shift = parseInt(cipherShiftInput.value);
-            const mode = cipherModeInput.value;
+                const shift = parseInt(cipherShiftInput.value);
+                const mode = cipherModeInput.value;
 
-            if (mode === 'caesar') {
-                cipherMessage = caesarCipher(rawText, shift);
-            } else {
-                cipherMessage = glitchCipher(rawText);
+                if (mode === 'caesar') {
+                    cipherMessage = caesarCipher(rawText, shift);
+                } else {
+                    cipherMessage = glitchCipher(rawText);
+                }
+            } catch (e) {
+                console.error("Cipher Update Error:", e);
             }
         }
 
