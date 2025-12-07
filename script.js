@@ -461,29 +461,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 ctx.globalAlpha = imgOpacity;
                 ctx.drawImage(injectedImage, x, y, dW, dH);
-                ctx.globalAlpha = 1.0;
-
-                flashCounter--;
                 if (flashCounter <= 0) isFlashing = false;
             }
 
             // Draw Cipher Overlay
             if (isCipherActive && cipherMessage) {
                 ctx.save();
-                ctx.font = `bold ${30 * cipherScale}px "Courier New"`;
-                ctx.fillStyle = "#00ff41"; // Hacker green
+
+                // Force reset crucial context states
+                ctx.globalAlpha = 1.0;
+                ctx.globalCompositeOperation = 'source-over';
+
+                const fontSize = 30 * cipherScale;
+                ctx.font = `bold ${fontSize}px "Courier New", monospace`;
+                ctx.fillStyle = "#00ff41";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-
-                // Add some glitch offset to text
-                const xOffset = (Math.random() - 0.5) * 4;
-                const yOffset = (Math.random() - 0.5) * 4;
-
-                const yPos = (canvas.height * (cipherY / 100));
-
-                if (Math.random() > 0.95) {
-                    ctx.fillStyle = "#ff0055"; // Occasional red glitch
-                }
+                ctx.shadowColor = "rgba(0, 255, 65, 0.5)";
+                ctx.shadowBlur = 10;
 
                 ctx.fillText(cipherMessage, (canvas.width / 2) + xOffset, yPos + yOffset);
                 ctx.restore();
