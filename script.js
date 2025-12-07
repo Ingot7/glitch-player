@@ -110,7 +110,48 @@ document.addEventListener('DOMContentLoaded', () => {
         let cipherShift = 3;
         let cipherMode = "caesar";
         let cipherScale = 2.0;
-        let cipherY = 50; // percentage
+        let cipherY = 15; // percentage
+
+        // Chaos Mode
+        let isChaosMode = false;
+        const chaosBtn = document.getElementById('chaos-btn');
+        let chaosTimer = 0;
+
+        if (chaosBtn) {
+            chaosBtn.addEventListener('click', () => {
+                isChaosMode = !isChaosMode;
+                chaosBtn.textContent = isChaosMode ? "CHAOS: ON" : "CHAOS: OFF";
+                chaosBtn.style.background = isChaosMode ? "#ff0055" : "transparent";
+                chaosBtn.style.color = isChaosMode ? "#000" : "#ff0055";
+            });
+        }
+
+        function updateChaos() {
+            if (!isChaosMode) return;
+
+            // Update every few frames to control speed
+            chaosTimer++;
+            if (chaosTimer % 5 !== 0) return;
+
+            // Random Walk Helper
+            const walk = (el, max, speed) => {
+                let current = parseFloat(el.value);
+                let change = (Math.random() - 0.5) * speed;
+                let newVal = Math.max(0, Math.min(max, current + change));
+                el.value = newVal;
+            };
+
+            walk(rgbShiftInput, 50, 10);
+            walk(noiseInput, 100, 20);
+            walk(scanlineInput, 20, 5);
+
+            // Occasional Pixel Drag Spike
+            if (Math.random() > 0.95) {
+                pixelDragInput.value = Math.random() * 200;
+            } else {
+                walk(pixelDragInput, 50, 5); // Usually keep it low
+            }
+        }
 
         // Initialize
         canvas.width = 1280;
@@ -352,6 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
         function renderLoop() {
             if (!isPlaying) return;
 
+            updateChaos();
+
             try {
                 // Clear canvas
                 ctx.fillStyle = '#000';
@@ -498,6 +541,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     const yOffset = (Math.random() - 0.5) * 4;
 
                     const yPos = (canvas.height * (cipherY / 100));
+
+                    // Cipher Background (for visibility)
+                    const textMetrics = ctx.measureText(cipherMessage);
+                    const textW = textMetrics.width;
+                    const textH = fontSize * 1.2;
+
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                    ctx.fillRect(
+                        (canvas.width / 2) - (textW / 2) - 20,
+                        yPos - (textH / 2),
+                        textW + 40,
+                        textH
+                    );
+
+                    // Cipher Text
+                    ctx.fillStyle = "#00ff41";
 
                     if (Math.random() > 0.95) {
                         ctx.fillStyle = "#ff0055"; // Occasional red glitch
