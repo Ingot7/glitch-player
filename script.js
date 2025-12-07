@@ -81,6 +81,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const dropZoneAssets = getEl('drop-zone-assets');
         const assetInput = getEl('asset-input');
 
+        // New Controls
+        const seekA = getEl('seek-a');
+        const seekB = getEl('seek-b');
+
+        const cipherText = getEl('cipher-text');
+        const cipherShiftInput = getEl('cipher-shift');
+        const cipherModeInput = getEl('cipher-mode');
+        const cipherScaleInput = getEl('cipher-scale');
+        const cipherYInput = getEl('cipher-y');
+        const toggleCipherBtn = getEl('toggle-cipher-btn');
+
         // New Image Controls (Safe check)
         const imgScaleInput = document.getElementById('img-scale') || { value: 1.0 };
         const imgOpacityInput = document.getElementById('img-opacity') || { value: 0.8 };
@@ -92,6 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let injectedImage = null;
         let isFlashing = false;
         let flashCounter = 0;
+
+        // Cipher Variables
+        let isCipherActive = false;
+        let cipherMessage = "";
+        let cipherShift = 3;
+        let cipherMode = "caesar";
+        let cipherScale = 2.0;
+        let cipherY = 50; // percentage
 
         // Initialize
         canvas.width = 1280;
@@ -248,6 +267,76 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Cipher Controls
+        toggleCipherBtn.addEventListener('click', () => {
+            isCipherActive = !isCipherActive;
+
+            if (isCipherActive) {
+                toggleCipherBtn.classList.add('active');
+                toggleCipherBtn.textContent = "REMOVE OVERLAY";
+                cipherText.style.borderColor = "#00ff41";
+                if (!cipherText.value.trim()) {
+                    cipherText.value = "SYSTEM OVERRIDE";
+                }
+            } else {
+                toggleCipherBtn.classList.remove('active');
+                toggleCipherBtn.textContent = "APPLY OVERLAY";
+                cipherText.style.borderColor = "";
+            }
+            updateCipherMessage();
+        });
+
+        function updateCipherMessage() {
+            let rawText = cipherText.value.toUpperCase();
+            if (!rawText && isCipherActive) rawText = " ";
+
+            const shift = parseInt(cipherShiftInput.value);
+            const mode = cipherModeInput.value;
+
+            if (mode === 'caesar') {
+                cipherMessage = caesarCipher(rawText, shift);
+            } else {
+                cipherMessage = glitchCipher(rawText);
+            }
+        }
+
+        [cipherText, cipherShiftInput, cipherModeInput].forEach(el => {
+            el.addEventListener('input', updateCipherMessage);
+        });
+
+        cipherScaleInput.addEventListener('input', (e) => cipherScale = parseFloat(e.target.value));
+        cipherYInput.addEventListener('input', (e) => cipherY = parseInt(e.target.value));
+
+        function caesarCipher(str, shift) {
+            return str.replace(/[A-Z]/g, char => {
+                return String.fromCharCode(((char.charCodeAt(0) - 65 + shift + 26) % 26) + 65);
+            });
+        }
+
+        function glitchCipher(str) {
+            const glitchChars = "¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
+            return str.split('').map(char => {
+                if (char === ' ') return ' ';
+                if (Math.random() > 0.7) return glitchChars[Math.floor(Math.random() * glitchChars.length)];
+                return char;
+            }).join('');
+        }
+
+        // Seek Logic
+        seekA.addEventListener('input', (e) => {
+            if (videoA.duration) {
+                const time = (e.target.value / 100) * videoA.duration;
+                videoA.currentTime = time;
+            }
+        });
+
+        seekB.addEventListener('input', (e) => {
+            if (videoB.duration) {
+                const time = (e.target.value / 100) * videoB.duration;
+                videoB.currentTime = time;
+            }
+        });
+
         // Render Loop
         function renderLoop() {
             if (!isPlaying) return;
@@ -375,7 +464,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.globalAlpha = 1.0;
 
                 flashCounter--;
-                if (flashCounter <= 0) isFlashing = false;
+                // Add some glitch offset to text
+                const xOffset = (Math.random() - 0.5) * 4;
+                const yOffset = (Math.random() - 0.5) * 4;
+
+                const yPos = (canvas.height * (cipherY / 100));
+
+                if (Math.random() > 0.95) {
+                    ctx.fillStyle = "#ff0055"; // Occasional red glitch
+                }
+
+                ctx.fillText(cipherMessage, (canvas.width / 2) + xOffset, yPos + yOffset);
+                ctx.restore();
+            }
+
+            // Update Seek Bars (UI Feedback)
+            if (!videoA.paused && videoA.duration) {
+                seekA.value = (videoA.currentTime / videoA.duration) * 100;
+            }
+            if (!videoB.paused && videoB.duration) {
+                seekB.value = (videoB.currentTime / videoB.duration) * 100;
             }
 
             requestAnimationFrame(renderLoop);

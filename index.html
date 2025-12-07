@@ -33,6 +33,10 @@
                 <div class="deck-controls left">
                     <h3>DECK A</h3>
                     <div class="control-group">
+                        <label>Seek</label>
+                        <input type="range" id="seek-a" min="0" max="100" value="0" step="0.1">
+                    </div>
+                    <div class="control-group">
                         <label>Vol</label>
                         <input type="range" id="vol-a" min="0" max="1" step="0.1" value="1">
                     </div>
@@ -72,6 +76,10 @@
                 <div class="deck-controls right">
                     <h3>DECK B</h3>
                     <div class="control-group">
+                        <label>Seek</label>
+                        <input type="range" id="seek-b" min="0" max="100" value="0" step="0.1">
+                    </div>
+                    <div class="control-group">
                         <label>Vol</label>
                         <input type="range" id="vol-b" min="0" max="1" step="0.1" value="0">
                     </div>
@@ -104,16 +112,191 @@
                 </div>
                 <button id="freeze-btn">FREEZE</button>
             </div>
+
+            <div id="cipher-controls">
+                <h3>CIPHER OVERLAY</h3>
+                <div class="control-group">
+                    <textarea id="cipher-text" placeholder="ENTER MESSAGE" rows="2"></textarea>
+                </div>
+                <div class="cipher-params">
+                    <div class="control-group">
+                        <label>Shift</label>
+                        <input type="number" id="cipher-shift" value="3" min="-25" max="25">
+                    </div>
+                    <div class="control-group">
+                        <label>Mode</label>
+                        <select id="cipher-mode">
+                            <option value="caesar">Caesar</option>
+                            <option value="glitch">Glitch</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Scale</label>
+                    <input type="range" id="cipher-scale" min="0.5" max="5.0" step="0.1" value="2.0">
+                </div>
+                <div class="control-group">
+                    <label>Y-Pos</label>
+                    <input type="range" id="cipher-y" min="0" max="100" value="50">
+                </div>
+                <button id="toggle-cipher-btn">APPLY OVERLAY</button>
+            </div>
         </div>
     </div>
 
-    <!-- Status Indicator -->
-    <div id="js-status"
-        style="position: fixed; top: 10px; left: 10px; z-index: 10000; background: red; color: white; padding: 5px; font-family: monospace;">
-        JS: WAITING...
-    </div>
+    <!DOCTYPE html>
+    <html lang="en">
 
-    <script src="script.js?v=4"></script>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Glitch Player</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
 
-</html>
+    <body>
+        <div id="app">
+            <div id="setup-screen">
+                <div class="deck-upload" id="drop-zone-a">
+                    <h2>DECK A</h2>
+                    <p>DROP VIDEO</p>
+                    <input type="file" id="file-input-a" accept="video/*" style="display: none;">
+                </div>
+                <div class="deck-upload" id="drop-zone-b">
+                    <h2>DECK B</h2>
+                    <p>DROP VIDEO</p>
+                    <input type="file" id="file-input-b" accept="video/*" style="display: none;">
+                </div>
+            </div>
+
+            <div id="player-container" style="display: none;">
+                <canvas id="glitch-canvas"></canvas>
+                <!-- Hidden Video Sources -->
+                <video id="video-a" loop playsinline style="display: none;"></video>
+                <video id="video-b" loop playsinline style="display: none;"></video>
+
+                <div id="main-controls">
+                    <div class="deck-controls left">
+                        <h3>DECK A</h3>
+                        <div class="control-group">
+                            <label>Seek</label>
+                            <input type="range" id="seek-a" min="0" max="100" value="0" step="0.1">
+                        </div>
+                        <div class="control-group">
+                            <label>Vol</label>
+                            <input type="range" id="vol-a" min="0" max="1" step="0.1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="mixer-center">
+                        <div class="crossfader-container">
+                            <label>A <-> B</label>
+                            <input type="range" id="crossfader" min="0" max="1" step="0.01" value="0.5">
+                        </div>
+
+                        <div class="global-effects">
+                            <div class="control-group">
+                                <label>RGB Shift</label>
+                                <input type="range" id="rgb-shift" min="0" max="50" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label>Noise</label>
+                                <input type="range" id="noise-amount" min="0" max="100" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label>Scanlines</label>
+                                <input type="range" id="scanline-count" min="0" max="20" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label>Tint</label>
+                                <input type="color" id="tint-color" value="#ffffff">
+                            </div>
+                        </div>
+
+                        <div class="transport-controls">
+                            <button id="play-pause">Play/Pause</button>
+                            <button id="record-btn" class="record-inactive">Record</button>
+                        </div>
+                    </div>
+
+                    <div class="deck-controls right">
+                        <h3>DECK B</h3>
+                        <div class="control-group">
+                            <label>Seek</label>
+                            <input type="range" id="seek-b" min="0" max="100" value="0" step="0.1">
+                        </div>
+                        <div class="control-group">
+                            <label>Vol</label>
+                            <input type="range" id="vol-b" min="0" max="1" step="0.1" value="0">
+                        </div>
+                    </div>
+
+                    <div class="assets-panel">
+                        <div id="drop-zone-assets" class="asset-upload">
+                            <p>DROP AI IMAGE</p>
+                            <input type="file" id="asset-input" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="asset-controls">
+                            <div class="control-group">
+                                <label>Scale</label>
+                                <input type="range" id="img-scale" min="0.1" max="2.0" step="0.1" value="1.0">
+                            </div>
+                            <div class="control-group">
+                                <label>Opacity</label>
+                                <input type="range" id="img-opacity" min="0.0" max="1.0" step="0.1" value="0.8">
+                            </div>
+                        </div>
+                        <button id="flash-btn">FLASH IMG</button>
+                    </div>
+                </div>
+
+                <div id="datamosh-controls">
+                    <h3>DATAMOSH</h3>
+                    <div class="control-group">
+                        <label>Pixel Drag</label>
+                        <input type="range" id="pixel-drag" min="0" max="255" value="0">
+                    </div>
+                    <button id="freeze-btn">FREEZE</button>
+                </div>
+
+                <div id="cipher-controls">
+                    <h3>CIPHER OVERLAY</h3>
+                    <div class="control-group">
+                        <textarea id="cipher-text" placeholder="ENTER MESSAGE" rows="2"></textarea>
+                    </div>
+                    <div class="cipher-params">
+                        <div class="control-group">
+                            <label>Shift</label>
+                            <input type="number" id="cipher-shift" value="3" min="-25" max="25">
+                        </div>
+                        <div class="control-group">
+                            <label>Mode</label>
+                            <select id="cipher-mode">
+                                <option value="caesar">Caesar</option>
+                                <option value="glitch">Glitch</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Scale</label>
+                        <input type="range" id="cipher-scale" min="0.5" max="5.0" step="0.1" value="2.0">
+                    </div>
+                    <div class="control-group">
+                        <label>Y-Pos</label>
+                        <input type="range" id="cipher-y" min="0" max="100" value="50">
+                    </div>
+                    <button id="toggle-cipher-btn">APPLY OVERLAY</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Indicator -->
+        <div id="js-status"
+            style="position: fixed; top: 10px; left: 10px; z-index: 10000; background: red; color: white; padding: 5px; font-family: monospace;">
+            JS: WAITING...
+        </div>
+
+        <script src="script.js?v=8"></script>
+    </body>
+
+    </html>
