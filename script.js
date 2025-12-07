@@ -464,6 +464,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.globalAlpha = 1.0;
 
                 flashCounter--;
+                if (flashCounter <= 0) isFlashing = false;
+            }
+
+            // Draw Cipher Overlay
+            if (isCipherActive && cipherMessage) {
+                ctx.save();
+                ctx.font = `bold ${30 * cipherScale}px "Courier New"`;
+                ctx.fillStyle = "#00ff41"; // Hacker green
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
                 // Add some glitch offset to text
                 const xOffset = (Math.random() - 0.5) * 4;
                 const yOffset = (Math.random() - 0.5) * 4;
