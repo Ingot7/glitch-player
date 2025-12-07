@@ -530,6 +530,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Audio Context & Mixing
+        let audioCtx;
+        let sourceA, sourceB;
+        let gainA, gainB;
         let dest;
 
         function initAudio() {
